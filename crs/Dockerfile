@@ -4,40 +4,54 @@ ARG ONEC_USERNAME
 ARG ONEC_PASSWORD
 ARG ONEC_VERSION
 ENV installer_type=server32
+ENV downloads=downloads/platform83/${ONEC_VERSION}
 
-COPY ./scripts/download.sh /download.sh
+COPY ./scripts/download_og.sh /download_og.sh
 
 WORKDIR /tmp
+COPY ./distr ./${downloads}
+RUN rm ./${downloads}/.gitkeep \
+  && rm -rf ${downloads}/thin.client*.tar.gz \
+  && rm -rf ${downloads}/client*.tar.gz \
+  && rm -rf ${downloads}/1c_edt*.tar.gz \
+  && if [ -z "$(ls -A ${downloads})" ]; then \
+  apk --no-cache add bash curl grep tar \
+  && set -x \
+  && sync; /download_og.sh; \
+  fi \
+  && rm -rf ${downloads}/*thin*.tar.gz \
+  && ls ${downloads} \
+  && for file in ${downloads}/*.tar.gz; do tar -xzf "$file"; done \
+  && rm -rf ${downloads}/*.*
 
-RUN apk --no-cache add bash curl grep \
-  && chmod +x /download.sh \
-  && sync; /download.sh \
-  && for file in *.tar.gz; do tar -zxf "$file"; done \
-  && rm -rf *.tar.gz
-
-FROM i386/debian:stretch-slim as base
+FROM i386/debian:bullseye-slim as base
 
 ARG gosu_ver=1.11
+ARG ONEC_VERSION
 ARG nls_enabled=false
+ENV installer_type=server32
 ENV nls=$nls_enabled
 
-COPY --from=downloader /tmp/*.deb /tmp/
-
+COPY ./scripts/install.sh /install.sh
+COPY --from=downloader /tmp/*.* /tmp/
 WORKDIR /tmp
 
 SHELL ["/bin/bash", "-c"]
-RUN set -xe; \
-  if [ "$nls" = true ]; then \
-    dpkg -i 1c-enterprise83-{common,server,ws,crs}*.deb; \
-  else \
-    dpkg -i 1c-enterprise83-{common,server,ws,crs}_*.deb; \
-  fi
+RUN ls . \
+  && chmod +x /install.sh \
+  && sync; /install.sh
+
+# create symlink to current 1c:enterprise directory
+COPY ./scripts/create-symlink-to-current-1cv8.sh /create-symlink-to-current-1cv8.sh
+RUN chmod +x /create-symlink-to-current-1cv8.sh \
+  && /create-symlink-to-current-1cv8.sh \
+  && rm /create-symlink-to-current-1cv8.sh
 
 ADD https://github.com/tianon/gosu/releases/download/$gosu_ver/gosu-i386 /bin/gosu
 
 RUN chmod +x /bin/gosu
 
-FROM i386/debian:stretch-slim
+FROM i386/debian:bullseye-slim
 LABEL maintainer="Anton Kvashenkin <anton.jugatsu@gmail.com> (@jugatsu)"
 
 ARG onec_uid="999"
