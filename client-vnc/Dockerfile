@@ -1,6 +1,6 @@
-ARG DOCKER_USERNAME
+ARG DOCKER_REGISTRY_URL
 ARG ONEC_VERSION
-FROM ${DOCKER_USERNAME}/onec-client:${ONEC_VERSION} as base
+FROM ${DOCKER_REGISTRY_URL}/onec-client:${ONEC_VERSION} as base
 
 FROM debian:bullseye-slim
 ARG ONEC_VERSION
@@ -47,7 +47,7 @@ RUN apt-get update \
       procps \
       x11vnc \
   # Install libpng12-0 from xenial
-  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 40976EAF437D05B5 \
+  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 40976EAF437D05B5 \
   && echo "deb http://security.ubuntu.com/ubuntu xenial-security main" > /etc/apt/sources.list.d/xenial-security.list \
   && apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -55,7 +55,7 @@ RUN apt-get update \
   && rm -rf  /etc/apt/sources.list.d/xenial-security.list \
   && apt-get update \
   # Install libwebkitgtk from stretch
-  && echo "deb http://deb.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list.d/stretch.list \
+  && echo "deb http://archive.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list.d/stretch.list \
   && apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libwebkitgtk-3.0-0 \

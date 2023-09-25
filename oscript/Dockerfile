@@ -1,8 +1,8 @@
-ARG DOCKER_USERNAME=library
+ARG DOCKER_REGISTRY_URL=library
 ARG BASE_IMAGE=debian
 ARG BASE_TAG=bullseye-slim
 
-FROM ${DOCKER_USERNAME}/${BASE_IMAGE}:${BASE_TAG}
+FROM ${DOCKER_REGISTRY_URL}/${BASE_IMAGE}:${BASE_TAG}
 
 # Installing mono and oscript dependencies
 ARG MONO_VERSION=6.12.0.122
@@ -37,8 +37,8 @@ RUN chmod +x /remove-dst-root-ca-x3.sh \
 
 # Installing oscript
 ARG OVM_REPOSITORY_OWNER=oscript-library
-ARG OVM_VERSION=v1.0.0-RC15
-ARG ONESCRIPT_VERSION=dev
+ARG OVM_VERSION=v1.0.0-RC16
+ARG ONESCRIPT_VERSION=stable
 ARG ONESCRIPT_PACKAGES="add gitsync vanessa-runner stebi"
 
 RUN wget https://github.com/${OVM_REPOSITORY_OWNER}/ovm/releases/download/${OVM_VERSION}/ovm.exe \
