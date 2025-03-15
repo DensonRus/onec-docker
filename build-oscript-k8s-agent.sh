@@ -1,23 +1,30 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -eo pipefail
 
-docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD $DOCKER_REGISTRY_URL
+if [ -n "${DOCKER_LOGIN}" ] && [ -n "${DOCKER_PASSWORD}" ] && [ -n "${DOCKER_REGISTRY_URL}" ]; then
+    if ! docker login -u "${DOCKER_LOGIN}" -p "${DOCKER_PASSWORD}" "${DOCKER_REGISTRY_URL}"; then
+        echo "Docker login failed"
+        exit 1
+    fi
+else
+    echo "Skipping Docker login due to missing credentials"
+fi
 
-if [ $DOCKER_SYSTEM_PRUNE = 'true' ] ; then
+if [ "${DOCKER_SYSTEM_PRUNE}" = 'true' ] ; then
     docker system prune -af
 fi
 
 last_arg='.'
-if [ $NO_CACHE = 'true' ] ; then
-	last_arg='--no-cache .'
+if [ "${NO_CACHE}" = 'true' ] ; then
+    last_arg='--no-cache .'
 fi
 
 docker build \
 	--pull \
     $no_cache_arg \
 	--build-arg DOCKER_REGISTRY_URL=library \
-    --build-arg BASE_IMAGE=adoptopenjdk \
-    --build-arg BASE_TAG=14-hotspot \
+    --build-arg BASE_IMAGE=eclipse-temurin \
+    --build-arg BASE_TAG=17 \
     -t $DOCKER_REGISTRY_URL/oscript-jdk:latest \
 	-f oscript/Dockerfile \
     $last_arg

@@ -13,16 +13,7 @@ if %NO_CACHE%=="true" (SET last_arg="--no-cache .") else (SET last_arg=".")
 set edt_version=%EDT_VERSION%
 set edt_escaped=%edt_version: =_%
 
-docker build ^
-	--pull ^
-	--build-arg ONEC_USERNAME=%ONEC_USERNAME% ^
-	--build-arg ONEC_PASSWORD=%ONEC_PASSWORD% ^
-    --build-arg EDT_VERSION=%EDT_VERSION% ^
-	-t %DOCKER_REGISTRY_URL%/onec-client:%edt_escaped% ^
-	-f edt/Dockerfile ^
-	%last_arg%
-
-if %ERRORLEVEL% neq 0 goto end
+.\build-edt.bat
 
 docker build ^
     --build-arg DOCKER_REGISTRY_URL=%DOCKER_REGISTRY_URL% ^

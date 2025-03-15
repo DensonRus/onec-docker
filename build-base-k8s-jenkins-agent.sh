@@ -1,23 +1,42 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -eo pipefail
 
-docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD $DOCKER_REGISTRY_URL
+if [ -n "${DOCKER_LOGIN}" ] && [ -n "${DOCKER_PASSWORD}" ] && [ -n "${DOCKER_REGISTRY_URL}" ]; then
+    if ! docker login -u "${DOCKER_LOGIN}" -p "${DOCKER_PASSWORD}" "${DOCKER_REGISTRY_URL}"; then
+        echo "Docker login failed"
+        exit 1
+    fi
+else
+    echo "Skipping Docker login due to missing credentials"
+fi
 
-if [ $DOCKER_SYSTEM_PRUNE = 'true' ] ; then
+if [ "${DOCKER_SYSTEM_PRUNE}" = 'true' ] ; then
     docker system prune -af
 fi
 
 last_arg='.'
-if [ $NO_CACHE = 'true' ] ; then
+if [ "${NO_CACHE}" = 'true' ] ; then
     last_arg='--no-cache .'
 fi
 
 docker build \
-    --pull \
+	--pull \
+    $no_cache_arg \
+	--build-arg DOCKER_REGISTRY_URL=library \
+    --build-arg BASE_IMAGE=ubuntu \
+    --build-arg BASE_TAG=20.04 \
+    --build-arg ONESCRIPT_PACKAGES="yard" \
+    -t $DOCKER_REGISTRY_URL/oscript-downloader:latest \
+	-f oscript/Dockerfile \
+    $last_arg
+
+docker build \
     --build-arg ONEC_USERNAME=$ONEC_USERNAME \
     --build-arg ONEC_PASSWORD=$ONEC_PASSWORD \
     --build-arg ONEC_VERSION=$ONEC_VERSION \
     --build-arg DOCKER_REGISTRY_URL=$DOCKER_REGISTRY_URL \
+    --build-arg BASE_IMAGE=oscript-downloader \
+    --build-arg BASE_TAG=latest \
     -t $DOCKER_REGISTRY_URL/onec-client:$ONEC_VERSION \
     -f client/Dockerfile \
     $last_arg
@@ -68,4 +87,6 @@ docker build \
     -f k8s-jenkins-agent/Dockerfile \
     $last_arg
 
-docker push $DOCKER_REGISTRY_URL/base-jenkins-agent:$ONEC_VERSION
+if [[ $PUSH_AGENT != "false" ]] ; then
+  docker push $DOCKER_REGISTRY_URL/base-jenkins-agent:$ONEC_VERSION
+fi

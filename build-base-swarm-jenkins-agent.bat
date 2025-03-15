@@ -12,10 +12,22 @@ if %NO_CACHE%=="true" (SET last_arg="--no-cache .") else (SET last_arg=".")
 
 docker build ^
 	--pull ^
+	--build-arg DOCKER_REGISTRY_URL=library ^
+    --build-arg BASE_IMAGE=ubuntu ^
+    --build-arg BASE_TAG=20.04 ^
+    --build-arg ONESCRIPT_PACKAGES="yard" ^
+    -t %DOCKER_REGISTRY_URL%/oscript-downloader:latest ^
+	-f oscript/Dockerfile ^
+    %last_arg%
+
+docker build ^
+	--pull ^
 	--build-arg ONEC_USERNAME=%ONEC_USERNAME% ^
 	--build-arg ONEC_PASSWORD=%ONEC_PASSWORD% ^
 	--build-arg ONEC_VERSION=%ONEC_VERSION% ^
 	--build-arg DOCKER_REGISTRY_URL=%DOCKER_REGISTRY_URL% ^
+    --build-arg BASE_IMAGE=oscript-downloader ^
+    --build-arg BASE_TAG=latest ^
 	-t %DOCKER_REGISTRY_URL%/onec-client:%ONEC_VERSION% ^
 	-f client/Dockerfile ^
 	%last_arg%
@@ -82,7 +94,9 @@ docker build ^
 
 if %ERRORLEVEL% neq 0 goto end
 
-docker push %DOCKER_REGISTRY_URL%/base-jenkins-agent:%ONEC_VERSION%
+IF NOT "%PUSH_AGENT%"=="false" (
+  docker push %DOCKER_REGISTRY_URL%/base-jenkins-agent:%ONEC_VERSION%
+)
 
 if %ERRORLEVEL% neq 0 goto end
 
